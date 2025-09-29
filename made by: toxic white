@@ -1,427 +1,370 @@
--- Plants vs Brainrot Script with UI
--- Universal Support: All Executors & Devices (PC, Android, iOS)
--- Compatible with: Synapse, Script-Ware, Krnl, Fluxus, Delta, Arceus X, Codex, etc.
+import React, { useState } from 'react';
+import { X, Home, ShoppingCart, Gift, ShoppingBag, Settings, Zap, Shield, Coffee, Check } from 'lucide-react';
 
--- Check executor and device compatibility
-local function getExecutorInfo()
-    local executor = identifyexecutor and identifyexecutor() or "Unknown"
-    local device = "PC"
-    
-    if game:GetService("UserInputService").TouchEnabled and not game:GetService("UserInputService").KeyboardEnabled then
-        device = "Mobile"
-    end
-    
-    return executor, device
-end
+export default function PlantsVsBrainrotUI() {
+  const [activeTab, setActiveTab] = useState('main');
+  const [isVisible, setIsVisible] = useState(true);
+  const [position, setPosition] = useState({ x: 100, y: 100 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
-local executorName, deviceType = getExecutorInfo()
-print("Executor:", executorName, "| Device:", deviceType)
+  // Toggle states
+  const [toggles, setToggles] = useState({
+    autoFarm: false,
+    autoTeleport: false,
+    autoBuyAllSeed: false,
+    autoBuyAllGear: false,
+    autoPlantSecret: false,
+    autoSell: false,
+    autoGift: false,
+    autoBuySeed: false,
+    autoBuyGearStock: false,
+    antiAFK: false,
+    antiBan: false,
+    antiKick: false
+  });
 
--- Universal compatibility functions
-local function safeRequire(url)
-    local success, result = pcall(function()
-        return loadstring(game:HttpGet(url))()
-    end)
-    return success and result or nil
-end
+  const [sellRarity, setSellRarity] = useState(['Rare']);
+  const [sellType, setSellType] = useState('Brainrot');
+  const [buyRarity, setBuyRarity] = useState(['Rare']);
+  const [giftTarget, setGiftTarget] = useState('Player1');
+  const [giftType, setGiftType] = useState('Brainrot');
 
-local FluentUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/obfalchx/testfluent/refs/heads/main/FluentTrau"))()
+  const handleToggle = (key) => {
+    setToggles(prev => ({ ...prev, [key]: !prev[key] }));
+  };
 
--- Variables
-local autoFarmEnabled = false
-local autoTeleportEnabled = false
-local autoBuyAllSeedEnabled = false
-local autoBuyAllGearEnabled = false
-local autoPlantSecretEnabled = false
+  const handleMouseDown = (e) => {
+    if (e.target.closest('.drag-handle')) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.clientX - position.x,
+        y: e.clientY - position.y
+      });
+    }
+  };
 
-local autoSellEnabled = false
-local sellRarity = "Rare"
-local sellType = "Brainrot"
+  const handleMouseMove = (e) => {
+    if (isDragging) {
+      setPosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      });
+    }
+  };
 
-local autoGiftEnabled = false
-local giftTarget = ""
-local giftType = "Brainrot"
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
 
-local autoBuySeedEnabled = false
-local buyRarity = "Rare"
-local autoBuyGearStockEnabled = false
+  React.useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging]);
 
--- Config Variables
-local antiAFKEnabled = false
-local antiBanEnabled = false
-local antiKickEnabled = false
+  const tabs = [
+    { id: 'main', name: 'Main', icon: Home },
+    { id: 'sell', name: 'Auto Sell', icon: ShoppingCart },
+    { id: 'gift', name: 'Auto Gift', icon: Gift },
+    { id: 'shop', name: 'Shop', icon: ShoppingBag },
+    { id: 'config', name: 'Config', icon: Settings }
+  ];
 
--- Create Window
-local Window = FluentUI:CreateWindow({
-    Title = "Plants vs Brainrot",
-    SubTitle = "Script Hub",
-    TabWidth = 160,
-    Size = UDim2.fromOffset(580, 460),
-    Acrylic = true,
-    Theme = "Dark"
-})
+  const ToggleSwitch = ({ label, checked, onChange, description }) => (
+    <div className="flex items-center justify-between p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800/70 transition-all">
+      <div className="flex-1">
+        <p className="text-sm font-medium text-white">{label}</p>
+        {description && <p className="text-xs text-gray-400 mt-0.5">{description}</p>}
+      </div>
+      <button
+        onClick={onChange}
+        className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
+          checked ? 'bg-gradient-to-r from-green-400 to-emerald-500' : 'bg-gray-600'
+        }`}
+      >
+        <div
+          className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-lg transition-transform duration-300 ${
+            checked ? 'translate-x-6' : 'translate-x-0'
+          }`}
+        />
+      </button>
+    </div>
+  );
 
--- Create Tabs
-local Tabs = {
-    Main = Window:AddTab({Title = "Main", Icon = "home"}),
-    AutoSell = Window:AddTab({Title = "Auto Sell", Icon = "shopping-cart"}),
-    AutoGift = Window:AddTab({Title = "Auto Gift", Icon = "gift"}),
-    Shop = Window:AddTab({Title = "Shop", Icon = "shopping-bag"}),
-    Config = Window:AddTab({Title = "Config", Icon = "settings"})
+  const MultiSelect = ({ label, options, selected, onChange }) => (
+    <div className="space-y-2">
+      <p className="text-sm font-medium text-gray-300">{label}</p>
+      <div className="flex flex-wrap gap-2">
+        {options.map(opt => (
+          <button
+            key={opt}
+            onClick={() => {
+              if (selected.includes(opt)) {
+                onChange(selected.filter(s => s !== opt));
+              } else {
+                onChange([...selected, opt]);
+              }
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              selected.includes(opt)
+                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            }`}
+          >
+            {opt}
+            {selected.includes(opt) && <Check className="inline-block ml-1 w-3 h-3" />}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  if (!isVisible) return null;
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        zIndex: 9999
+      }}
+      onMouseDown={handleMouseDown}
+      className="select-none"
+    >
+      <div className="w-[600px] bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl shadow-2xl border border-gray-700/50 overflow-hidden">
+        {/* Header */}
+        <div className="drag-handle cursor-move bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <Zap className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-white">Plants vs Brainrot</h1>
+                <p className="text-xs text-white/80">Universal Script Hub</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsVisible(false)}
+              className="w-8 h-8 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all"
+            >
+              <X className="w-5 h-5 text-white" />
+            </button>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-1 p-2 bg-gray-900/50">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-medium text-sm transition-all ${
+                activeTab === tab.id
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                  : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-gray-300'
+              }`}
+            >
+              <tab.icon className="w-4 h-4" />
+              <span className="hidden sm:inline">{tab.name}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div className="p-4 space-y-3 max-h-[400px] overflow-y-auto">
+          {activeTab === 'main' && (
+            <div className="space-y-3">
+              <div className="p-3 rounded-lg bg-gradient-to-r from-blue-600/20 to-cyan-600/20 border border-blue-500/30">
+                <p className="text-sm font-semibold text-blue-300">⚡ Main Features</p>
+                <p className="text-xs text-gray-400 mt-1">Tự động farm và thu thập tài nguyên</p>
+              </div>
+              <ToggleSwitch
+                label="Auto Farm A-Z"
+                checked={toggles.autoFarm}
+                onChange={() => handleToggle('autoFarm')}
+              />
+              <ToggleSwitch
+                label="Auto Teleport & Collect Money"
+                checked={toggles.autoTeleport}
+                onChange={() => handleToggle('autoTeleport')}
+                description="Tự động dịch chuyển và thu tiền"
+              />
+              <ToggleSwitch
+                label="Auto Buy All Seed Shop"
+                checked={toggles.autoBuyAllSeed}
+                onChange={() => handleToggle('autoBuyAllSeed')}
+              />
+              <ToggleSwitch
+                label="Auto Buy All Gear Shop"
+                checked={toggles.autoBuyAllGear}
+                onChange={() => handleToggle('autoBuyAllGear')}
+              />
+              <ToggleSwitch
+                label="Auto Plant Secret Seed"
+                checked={toggles.autoPlantSecret}
+                onChange={() => handleToggle('autoPlantSecret')}
+              />
+            </div>
+          )}
+
+          {activeTab === 'sell' && (
+            <div className="space-y-3">
+              <div className="p-3 rounded-lg bg-gradient-to-r from-orange-600/20 to-red-600/20 border border-orange-500/30">
+                <p className="text-sm font-semibold text-orange-300">🛒 Auto Sell System</p>
+                <p className="text-xs text-gray-400 mt-1">Tự động bán theo độ hiếm</p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-300">Chọn loại</p>
+                <div className="flex gap-2">
+                  {['Brainrot', 'Plant'].map(type => (
+                    <button
+                      key={type}
+                      onClick={() => setSellType(type)}
+                      className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                        sellType === type
+                          ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <MultiSelect
+                label="Chọn độ hiếm"
+                options={['Rare', 'Epic', 'Legendary', 'Mythical']}
+                selected={sellRarity}
+                onChange={setSellRarity}
+              />
+              <ToggleSwitch
+                label="Bật Auto Sell"
+                checked={toggles.autoSell}
+                onChange={() => handleToggle('autoSell')}
+              />
+            </div>
+          )}
+
+          {activeTab === 'gift' && (
+            <div className="space-y-3">
+              <div className="p-3 rounded-lg bg-gradient-to-r from-pink-600/20 to-purple-600/20 border border-pink-500/30">
+                <p className="text-sm font-semibold text-pink-300">🎁 Auto Gift System</p>
+                <p className="text-xs text-gray-400 mt-1">Tự động tặng quà cho người chơi</p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-300">Chọn người chơi</p>
+                <select
+                  value={giftTarget}
+                  onChange={(e) => setGiftTarget(e.target.value)}
+                  className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:border-purple-500 outline-none"
+                >
+                  <option>Player1</option>
+                  <option>Player2</option>
+                  <option>Player3</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-300">Chọn loại gift</p>
+                <div className="flex gap-2">
+                  {['Brainrot', 'Plant'].map(type => (
+                    <button
+                      key={type}
+                      onClick={() => setGiftType(type)}
+                      className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                        giftType === type
+                          ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <ToggleSwitch
+                label="Bật Auto Gift"
+                checked={toggles.autoGift}
+                onChange={() => handleToggle('autoGift')}
+              />
+            </div>
+          )}
+
+          {activeTab === 'shop' && (
+            <div className="space-y-3">
+              <div className="p-3 rounded-lg bg-gradient-to-r from-green-600/20 to-emerald-600/20 border border-green-500/30">
+                <p className="text-sm font-semibold text-green-300">🏪 Auto Buy Shop</p>
+                <p className="text-xs text-gray-400 mt-1">Tự động mua seed và gear</p>
+              </div>
+              <MultiSelect
+                label="Chọn độ hiếm seed"
+                options={['Rare', 'Epic', 'Legendary', 'Mythical', 'Godly', 'Secret']}
+                selected={buyRarity}
+                onChange={setBuyRarity}
+              />
+              <ToggleSwitch
+                label="Auto Buy Seed"
+                checked={toggles.autoBuySeed}
+                onChange={() => handleToggle('autoBuySeed')}
+              />
+              <ToggleSwitch
+                label="Auto Buy All Gear Stock"
+                checked={toggles.autoBuyGearStock}
+                onChange={() => handleToggle('autoBuyGearStock')}
+              />
+            </div>
+          )}
+
+          {activeTab === 'config' && (
+            <div className="space-y-3">
+              <div className="p-3 rounded-lg bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30">
+                <p className="text-sm font-semibold text-blue-300">🛡️ Protection & Safety</p>
+                <p className="text-xs text-gray-400 mt-1">Bảo vệ tài khoản và chống phát hiện</p>
+              </div>
+              <ToggleSwitch
+                label="Anti AFK"
+                checked={toggles.antiAFK}
+                onChange={() => handleToggle('antiAFK')}
+                description="Chống kick do AFK - AFK vô hạn"
+              />
+              <ToggleSwitch
+                label="Anti Ban"
+                checked={toggles.antiBan}
+                onChange={() => handleToggle('antiBan')}
+                description="Làm mờ hành động script"
+              />
+              <ToggleSwitch
+                label="Anti Kick"
+                checked={toggles.antiKick}
+                onChange={() => handleToggle('antiKick')}
+                description="Chống bị kick khỏi server"
+              />
+              <div className="p-3 rounded-lg bg-gray-800/50 space-y-1">
+                <p className="text-xs font-semibold text-emerald-400">✅ Universal Support</p>
+                <p className="text-xs text-gray-400">PC: Synapse, Krnl, Fluxus, Script-Ware</p>
+                <p className="text-xs text-gray-400">Mobile: Arceus X, Delta, Codex</p>
+                <p className="text-xs text-gray-400">iOS: Delta, Esoteric, Nico's</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="p-3 bg-gray-900/80 border-t border-gray-700/50 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+            <span className="text-xs text-gray-400">Script Active</span>
+          </div>
+          <span className="text-xs text-gray-500">Made with ❤️</span>
+        </div>
+      </div>
+    </div>
+  );
 }
-
--- TAB 1: MAIN
-Tabs.Main:AddParagraph({
-    Title = "Main Features",
-    Content = "Tự động farm và thu thập tài nguyên"
-})
-
-Tabs.Main:AddToggle("AutoFarm", {
-    Title = "Auto Farm A-Z",
-    Default = false,
-    Callback = function(v)
-        autoFarmEnabled = v
-        while autoFarmEnabled do
-            -- Logic auto farm
-            print("Auto farming...")
-            task.wait(1)
-        end
-    end
-})
-
-Tabs.Main:AddToggle("AutoTeleport", {
-    Title = "Auto Teleport & Collect Money",
-    Default = false,
-    Callback = function(v)
-        autoTeleportEnabled = v
-        while autoTeleportEnabled do
-            -- Logic teleport đến brainrot và collect money
-            print("Teleporting to brainrot and collecting money...")
-            task.wait(2)
-        end
-    end
-})
-
-Tabs.Main:AddToggle("AutoBuyAllSeed", {
-    Title = "Auto Buy All Seed Shop",
-    Default = false,
-    Callback = function(v)
-        autoBuyAllSeedEnabled = v
-        if autoBuyAllSeedEnabled then
-            -- Logic mua tất cả seed
-            print("Buying all seeds from shop...")
-        end
-    end
-})
-
-Tabs.Main:AddToggle("AutoBuyAllGear", {
-    Title = "Auto Buy All Gear Shop",
-    Default = false,
-    Callback = function(v)
-        autoBuyAllGearEnabled = v
-        if autoBuyAllGearEnabled then
-            -- Logic mua tất cả gear
-            print("Buying all gear from shop...")
-        end
-    end
-})
-
-Tabs.Main:AddToggle("AutoPlantSecret", {
-    Title = "Auto Plant Secret Seed",
-    Default = false,
-    Callback = function(v)
-        autoPlantSecretEnabled = v
-        while autoPlantSecretEnabled do
-            -- Logic trồng secret seed
-            print("Planting secret seeds...")
-            task.wait(3)
-        end
-    end
-})
-
--- TAB 2: AUTO SELL
-Tabs.AutoSell:AddParagraph({
-    Title = "Auto Sell System",
-    Content = "Tự động bán brainrot hoặc plant theo độ hiếm"
-})
-
-Tabs.AutoSell:AddDropdown("SellType", {
-    Title = "Chọn loại muốn bán",
-    Values = {"Brainrot", "Plant"},
-    Default = 1,
-    Callback = function(v)
-        sellType = v
-        print("Sell type:", v)
-    end
-})
-
-Tabs.AutoSell:AddDropdown("SellRarity", {
-    Title = "Chọn độ hiếm",
-    Values = {"Rare", "Epic", "Legendary", "Mythical"},
-    Multi = true,
-    Default = {"Rare"},
-    Callback = function(v)
-        sellRarity = v
-        print("Selected rarities:", table.concat(v, ", "))
-    end
-})
-
-Tabs.AutoSell:AddToggle("AutoSell", {
-    Title = "Bật Auto Sell",
-    Default = false,
-    Callback = function(v)
-        autoSellEnabled = v
-        while autoSellEnabled do
-            -- Logic auto sell
-            print("Auto selling", sellType, "with rarities:", table.concat(sellRarity, ", "))
-            task.wait(2)
-        end
-    end
-})
-
--- TAB 3: AUTO GIFT
-Tabs.AutoGift:AddParagraph({
-    Title = "Auto Gift System",
-    Content = "Tự động tặng brainrot hoặc plant cho người chơi"
-})
-
-local playerList = {}
-for _, player in pairs(game.Players:GetPlayers()) do
-    if player ~= game.Players.LocalPlayer then
-        table.insert(playerList, player.Name)
-    end
-end
-
-Tabs.AutoGift:AddDropdown("GiftTarget", {
-    Title = "Chọn người chơi",
-    Values = playerList,
-    Default = 1,
-    Callback = function(v)
-        giftTarget = v
-        print("Gift target:", v)
-    end
-})
-
-Tabs.AutoGift:AddDropdown("GiftType", {
-    Title = "Chọn loại gift",
-    Values = {"Brainrot", "Plant"},
-    Default = 1,
-    Callback = function(v)
-        giftType = v
-        print("Gift type:", v)
-    end
-})
-
-Tabs.AutoGift:AddToggle("AutoGift", {
-    Title = "Bật Auto Gift",
-    Default = false,
-    Callback = function(v)
-        autoGiftEnabled = v
-        while autoGiftEnabled do
-            -- Logic auto gift
-            print("Gifting", giftType, "to", giftTarget)
-            task.wait(3)
-        end
-    end
-})
-
--- TAB 4: SHOP
-Tabs.Shop:AddParagraph({
-    Title = "Auto Buy Shop",
-    Content = "Tự động mua seed và gear từ shop"
-})
-
-Tabs.Shop:AddDropdown("BuyRarity", {
-    Title = "Chọn độ hiếm seed",
-    Values = {"Rare", "Epic", "Legendary", "Mythical", "Godly", "Secret"},
-    Multi = true,
-    Default = {"Rare"},
-    Callback = function(v)
-        buyRarity = v
-        print("Selected buy rarities:", table.concat(v, ", "))
-    end
-})
-
-Tabs.Shop:AddToggle("AutoBuySeed", {
-    Title = "Auto Buy Seed",
-    Default = false,
-    Callback = function(v)
-        autoBuySeedEnabled = v
-        while autoBuySeedEnabled do
-            -- Logic auto buy seed
-            print("Auto buying seeds:", table.concat(buyRarity, ", "))
-            task.wait(2)
-        end
-    end
-})
-
-Tabs.Shop:AddToggle("AutoBuyGearStock", {
-    Title = "Auto Buy All Gear Stock",
-    Default = false,
-    Callback = function(v)
-        autoBuyGearStockEnabled = v
-        while autoBuyGearStockEnabled do
-            -- Logic auto buy all gear in stock
-            print("Auto buying all gear in stock...")
-            task.wait(3)
-        end
-    end
-})
-
--- TAB 5: CONFIG
-Tabs.Config:AddParagraph({
-    Title = "Protection & Safety",
-    Content = "Các tính năng bảo vệ tài khoản và chống phát hiện"
-})
-
-Tabs.Config:AddToggle("AntiAFK", {
-    Title = "Anti AFK",
-    Description = "Chống bị kick do AFK - có thể AFK vô hạn",
-    Default = false,
-    Callback = function(v)
-        antiAFKEnabled = v
-        if antiAFKEnabled then
-            -- Anti AFK Logic
-            local VirtualUser = game:GetService("VirtualUser")
-            game:GetService("Players").LocalPlayer.Idled:connect(function()
-                VirtualUser:CaptureController()
-                VirtualUser:ClickButton2(Vector2.new())
-                print("Anti AFK: Prevented idle kick")
-            end)
-            print("Anti AFK: Enabled")
-        else
-            print("Anti AFK: Disabled")
-        end
-    end
-})
-
-Tabs.Config:AddToggle("AntiBan", {
-    Title = "Anti Ban",
-    Description = "Bảo vệ khỏi bị ban (làm mờ hành động script)",
-    Default = false,
-    Callback = function(v)
-        antiBanEnabled = v
-        if antiBanEnabled then
-            -- Anti Ban Logic - Thêm delay ngẫu nhiên và làm hành động tự nhiên hơn
-            print("Anti Ban: Enabled - Actions will be more randomized")
-            
-            -- Hook các hành động để thêm delay tự nhiên
-            local oldNamecall
-            oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-                local method = getnamecallmethod()
-                local args = {...}
-                
-                if antiBanEnabled and (method == "FireServer" or method == "InvokeServer") then
-                    -- Thêm delay ngẫu nhiên từ 0.1-0.5 giây
-                    task.wait(math.random(10, 50) / 100)
-                end
-                
-                return oldNamecall(self, ...)
-            end)
-        else
-            print("Anti Ban: Disabled")
-        end
-    end
-})
-
-Tabs.Config:AddToggle("AntiKick", {
-    Title = "Anti Kick",
-    Description = "Chống bị kick khỏi server",
-    Default = false,
-    Callback = function(v)
-        antiKickEnabled = v
-        if antiKickEnabled then
-            -- Anti Kick Logic
-            local LocalPlayer = game:GetService("Players").LocalPlayer
-            local oldNamecall
-            
-            oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-                local method = getnamecallmethod()
-                local args = {...}
-                
-                if method == "Kick" and antiKickEnabled then
-                    print("Anti Kick: Prevented kick attempt")
-                    return nil
-                end
-                
-                return oldNamecall(self, ...)
-            end)
-            
-            -- Chặn LocalScript kick
-            for _, v in pairs(getconnections(LocalPlayer.Kicked)) do
-                v:Disable()
-            end
-            
-            print("Anti Kick: Enabled")
-        else
-            print("Anti Kick: Disabled")
-        end
-    end
-})
-
-Tabs.Config:AddSection("Executor & Device Info")
-
-Tabs.Config:AddParagraph({
-    Title = "✅ Universal Compatibility",
-    Content = string.format("Executor: %s\nDevice: %s\nSupported: All executors & devices", executorName, deviceType)
-})
-
-Tabs.Config:AddParagraph({
-    Title = "📱 Supported Executors",
-    Content = "PC: Synapse X, Script-Ware, Krnl, Fluxus, Electron, JJSploit\n" ..
-              "Android: Arceus X, Delta X, Codex, Hydrogen\n" ..
-              "iOS: Delta, Esoteric, Nico's NextGen, Cassandra"
-})
-
-Tabs.Config:AddButton({
-    Title = "Check Compatibility",
-    Description = "Kiểm tra executor và device hiện tại",
-    Callback = function()
-        FluentUI:Notify({
-            Title = "Compatibility Check",
-            Content = string.format("✅ Executor: %s\n✅ Device: %s\n✅ Status: Fully Supported", executorName, deviceType),
-            Duration = 5
-        })
-    end
-})
-
-Tabs.Config:AddButton({
-    Title = "Rejoin Server",
-    Description = "Tham gia lại server hiện tại",
-    Callback = function()
-        local TeleportService = game:GetService("TeleportService")
-        local Players = game:GetService("Players")
-        local PlaceId = game.PlaceId
-        local JobId = game.JobId
-        
-        TeleportService:TeleportToPlaceInstance(PlaceId, JobId, Players.LocalPlayer)
-    end
-})
-
-Tabs.Config:AddButton({
-    Title = "Server Hop",
-    Description = "Chuyển sang server khác",
-    Callback = function()
-        local TeleportService = game:GetService("TeleportService")
-        local HttpService = game:GetService("HttpService")
-        
-        local servers = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
-        
-        for _, server in pairs(servers.data) do
-            if server.id ~= game.JobId and server.playing < server.maxPlayers then
-                TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id)
-                break
-            end
-        end
-    end
-})
-
--- Notification
-FluentUI:Notify({
-    Title = "Plants vs Brainrot",
-    Content = string.format("✅ Script loaded!\n🖥️ Device: %s\n⚡ Executor: %s", deviceType, executorName),
-    Duration = 5
-})
-
-print("Plants vs Brainrot Script Loaded!")
-print("Universal Support: All Executors & Devices ✅")
