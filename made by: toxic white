@@ -1,0 +1,373 @@
+-- Plants vs Brainrot Script with UI
+local FluentUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/obfalchx/testfluent/refs/heads/main/FluentTrau"))()
+
+-- Variables
+local autoFarmEnabled = false
+local autoTeleportEnabled = false
+local autoBuyAllSeedEnabled = false
+local autoBuyAllGearEnabled = false
+local autoPlantSecretEnabled = false
+
+local autoSellEnabled = false
+local sellRarity = "Rare"
+local sellType = "Brainrot"
+
+local autoGiftEnabled = false
+local giftTarget = ""
+local giftType = "Brainrot"
+
+local autoBuySeedEnabled = false
+local buyRarity = "Rare"
+local autoBuyGearStockEnabled = false
+
+-- Config Variables
+local antiAFKEnabled = false
+local antiBanEnabled = false
+local antiKickEnabled = false
+
+-- Create Window
+local Window = FluentUI:CreateWindow({
+    Title = "Plants vs Brainrot",
+    SubTitle = "Script Hub",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = true,
+    Theme = "Dark"
+})
+
+-- Create Tabs
+local Tabs = {
+    Main = Window:AddTab({Title = "Main", Icon = "home"}),
+    AutoSell = Window:AddTab({Title = "Auto Sell", Icon = "shopping-cart"}),
+    AutoGift = Window:AddTab({Title = "Auto Gift", Icon = "gift"}),
+    Shop = Window:AddTab({Title = "Shop", Icon = "shopping-bag"}),
+    Config = Window:AddTab({Title = "Config", Icon = "settings"})
+}
+
+-- TAB 1: MAIN
+Tabs.Main:AddParagraph({
+    Title = "Main Features",
+    Content = "Tự động farm và thu thập tài nguyên"
+})
+
+Tabs.Main:AddToggle("AutoFarm", {
+    Title = "Auto Farm A-Z",
+    Default = false,
+    Callback = function(v)
+        autoFarmEnabled = v
+        while autoFarmEnabled do
+            -- Logic auto farm
+            print("Auto farming...")
+            task.wait(1)
+        end
+    end
+})
+
+Tabs.Main:AddToggle("AutoTeleport", {
+    Title = "Auto Teleport & Collect Money",
+    Default = false,
+    Callback = function(v)
+        autoTeleportEnabled = v
+        while autoTeleportEnabled do
+            -- Logic teleport đến brainrot và collect money
+            print("Teleporting to brainrot and collecting money...")
+            task.wait(2)
+        end
+    end
+})
+
+Tabs.Main:AddToggle("AutoBuyAllSeed", {
+    Title = "Auto Buy All Seed Shop",
+    Default = false,
+    Callback = function(v)
+        autoBuyAllSeedEnabled = v
+        if autoBuyAllSeedEnabled then
+            -- Logic mua tất cả seed
+            print("Buying all seeds from shop...")
+        end
+    end
+})
+
+Tabs.Main:AddToggle("AutoBuyAllGear", {
+    Title = "Auto Buy All Gear Shop",
+    Default = false,
+    Callback = function(v)
+        autoBuyAllGearEnabled = v
+        if autoBuyAllGearEnabled then
+            -- Logic mua tất cả gear
+            print("Buying all gear from shop...")
+        end
+    end
+})
+
+Tabs.Main:AddToggle("AutoPlantSecret", {
+    Title = "Auto Plant Secret Seed",
+    Default = false,
+    Callback = function(v)
+        autoPlantSecretEnabled = v
+        while autoPlantSecretEnabled do
+            -- Logic trồng secret seed
+            print("Planting secret seeds...")
+            task.wait(3)
+        end
+    end
+})
+
+-- TAB 2: AUTO SELL
+Tabs.AutoSell:AddParagraph({
+    Title = "Auto Sell System",
+    Content = "Tự động bán brainrot hoặc plant theo độ hiếm"
+})
+
+Tabs.AutoSell:AddDropdown("SellType", {
+    Title = "Chọn loại muốn bán",
+    Values = {"Brainrot", "Plant"},
+    Default = 1,
+    Callback = function(v)
+        sellType = v
+        print("Sell type:", v)
+    end
+})
+
+Tabs.AutoSell:AddDropdown("SellRarity", {
+    Title = "Chọn độ hiếm",
+    Values = {"Rare", "Epic", "Legendary", "Mythical"},
+    Multi = true,
+    Default = {"Rare"},
+    Callback = function(v)
+        sellRarity = v
+        print("Selected rarities:", table.concat(v, ", "))
+    end
+})
+
+Tabs.AutoSell:AddToggle("AutoSell", {
+    Title = "Bật Auto Sell",
+    Default = false,
+    Callback = function(v)
+        autoSellEnabled = v
+        while autoSellEnabled do
+            -- Logic auto sell
+            print("Auto selling", sellType, "with rarities:", table.concat(sellRarity, ", "))
+            task.wait(2)
+        end
+    end
+})
+
+-- TAB 3: AUTO GIFT
+Tabs.AutoGift:AddParagraph({
+    Title = "Auto Gift System",
+    Content = "Tự động tặng brainrot hoặc plant cho người chơi"
+})
+
+local playerList = {}
+for _, player in pairs(game.Players:GetPlayers()) do
+    if player ~= game.Players.LocalPlayer then
+        table.insert(playerList, player.Name)
+    end
+end
+
+Tabs.AutoGift:AddDropdown("GiftTarget", {
+    Title = "Chọn người chơi",
+    Values = playerList,
+    Default = 1,
+    Callback = function(v)
+        giftTarget = v
+        print("Gift target:", v)
+    end
+})
+
+Tabs.AutoGift:AddDropdown("GiftType", {
+    Title = "Chọn loại gift",
+    Values = {"Brainrot", "Plant"},
+    Default = 1,
+    Callback = function(v)
+        giftType = v
+        print("Gift type:", v)
+    end
+})
+
+Tabs.AutoGift:AddToggle("AutoGift", {
+    Title = "Bật Auto Gift",
+    Default = false,
+    Callback = function(v)
+        autoGiftEnabled = v
+        while autoGiftEnabled do
+            -- Logic auto gift
+            print("Gifting", giftType, "to", giftTarget)
+            task.wait(3)
+        end
+    end
+})
+
+-- TAB 4: SHOP
+Tabs.Shop:AddParagraph({
+    Title = "Auto Buy Shop",
+    Content = "Tự động mua seed và gear từ shop"
+})
+
+Tabs.Shop:AddDropdown("BuyRarity", {
+    Title = "Chọn độ hiếm seed",
+    Values = {"Rare", "Epic", "Legendary", "Mythical", "Godly", "Secret"},
+    Multi = true,
+    Default = {"Rare"},
+    Callback = function(v)
+        buyRarity = v
+        print("Selected buy rarities:", table.concat(v, ", "))
+    end
+})
+
+Tabs.Shop:AddToggle("AutoBuySeed", {
+    Title = "Auto Buy Seed",
+    Default = false,
+    Callback = function(v)
+        autoBuySeedEnabled = v
+        while autoBuySeedEnabled do
+            -- Logic auto buy seed
+            print("Auto buying seeds:", table.concat(buyRarity, ", "))
+            task.wait(2)
+        end
+    end
+})
+
+Tabs.Shop:AddToggle("AutoBuyGearStock", {
+    Title = "Auto Buy All Gear Stock",
+    Default = false,
+    Callback = function(v)
+        autoBuyGearStockEnabled = v
+        while autoBuyGearStockEnabled do
+            -- Logic auto buy all gear in stock
+            print("Auto buying all gear in stock...")
+            task.wait(3)
+        end
+    end
+})
+
+-- TAB 5: CONFIG
+Tabs.Config:AddParagraph({
+    Title = "Protection & Safety",
+    Content = "Các tính năng bảo vệ tài khoản và chống phát hiện"
+})
+
+Tabs.Config:AddToggle("AntiAFK", {
+    Title = "Anti AFK",
+    Description = "Chống bị kick do AFK - có thể AFK vô hạn",
+    Default = false,
+    Callback = function(v)
+        antiAFKEnabled = v
+        if antiAFKEnabled then
+            -- Anti AFK Logic
+            local VirtualUser = game:GetService("VirtualUser")
+            game:GetService("Players").LocalPlayer.Idled:connect(function()
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton2(Vector2.new())
+                print("Anti AFK: Prevented idle kick")
+            end)
+            print("Anti AFK: Enabled")
+        else
+            print("Anti AFK: Disabled")
+        end
+    end
+})
+
+Tabs.Config:AddToggle("AntiBan", {
+    Title = "Anti Ban",
+    Description = "Bảo vệ khỏi bị ban (làm mờ hành động script)",
+    Default = false,
+    Callback = function(v)
+        antiBanEnabled = v
+        if antiBanEnabled then
+            -- Anti Ban Logic - Thêm delay ngẫu nhiên và làm hành động tự nhiên hơn
+            print("Anti Ban: Enabled - Actions will be more randomized")
+            
+            -- Hook các hành động để thêm delay tự nhiên
+            local oldNamecall
+            oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+                local method = getnamecallmethod()
+                local args = {...}
+                
+                if antiBanEnabled and (method == "FireServer" or method == "InvokeServer") then
+                    -- Thêm delay ngẫu nhiên từ 0.1-0.5 giây
+                    task.wait(math.random(10, 50) / 100)
+                end
+                
+                return oldNamecall(self, ...)
+            end)
+        else
+            print("Anti Ban: Disabled")
+        end
+    end
+})
+
+Tabs.Config:AddToggle("AntiKick", {
+    Title = "Anti Kick",
+    Description = "Chống bị kick khỏi server",
+    Default = false,
+    Callback = function(v)
+        antiKickEnabled = v
+        if antiKickEnabled then
+            -- Anti Kick Logic
+            local LocalPlayer = game:GetService("Players").LocalPlayer
+            local oldNamecall
+            
+            oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+                local method = getnamecallmethod()
+                local args = {...}
+                
+                if method == "Kick" and antiKickEnabled then
+                    print("Anti Kick: Prevented kick attempt")
+                    return nil
+                end
+                
+                return oldNamecall(self, ...)
+            end)
+            
+            -- Chặn LocalScript kick
+            for _, v in pairs(getconnections(LocalPlayer.Kicked)) do
+                v:Disable()
+            end
+            
+            print("Anti Kick: Enabled")
+        else
+            print("Anti Kick: Disabled")
+        end
+    end
+})
+
+Tabs.Config:AddButton({
+    Title = "Rejoin Server",
+    Description = "Tham gia lại server hiện tại",
+    Callback = function()
+        local TeleportService = game:GetService("TeleportService")
+        local Players = game:GetService("Players")
+        local PlaceId = game.PlaceId
+        local JobId = game.JobId
+        
+        TeleportService:TeleportToPlaceInstance(PlaceId, JobId, Players.LocalPlayer)
+    end
+})
+
+Tabs.Config:AddButton({
+    Title = "Server Hop",
+    Description = "Chuyển sang server khác",
+    Callback = function()
+        local TeleportService = game:GetService("TeleportService")
+        local HttpService = game:GetService("HttpService")
+        
+        local servers = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
+        
+        for _, server in pairs(servers.data) do
+            if server.id ~= game.JobId and server.playing < server.maxPlayers then
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id)
+                break
+            end
+        end
+    end
+})
+
+-- Notification
+FluentUI:Notify({
+    Title = "Plants vs Brainrot",
+    Content = "Script loaded successfully!",
+    Duration = 5
+})
+print("Plants vs Brainrot Script Loaded!")
